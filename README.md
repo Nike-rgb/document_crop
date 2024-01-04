@@ -11,7 +11,7 @@ Package **document_crop** is a JavaScript library which you can use to create Ca
 - **Framework-Agnostic**: Seamlessly integrate with your preferred web framework.
   <br>
 
-  ![demo](https://raw.githubusercontent.com/Nike-rgb/document_crop/main/assets/demo.gif)
+  ![demo](https://raw.githubusercontent.com/Nike-rgb/document_crop/main/assets/demo_crop.gif)
 
 ## Basic Example Usage
 
