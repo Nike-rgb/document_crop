@@ -615,7 +615,7 @@ class Scanner {
 
   // Public methods
 
-  loadImg(imgSrc: string) {
+  loadImg(imgSrc: string): void {
     this.#img.src = imgSrc;
     this.#img.crossOrigin = "anonymous";
     this.#img.onload = () => {
@@ -629,12 +629,12 @@ class Scanner {
     };
   }
 
-  crop() {
+  crop(): string {
     const croppedCanvas = this.#applyPerspectiveTransform(this.#corners);
     return croppedCanvas.toDataURL("image/png");
   }
 
-  getBlob() {
+  getBlob(): Promise<Blob> {
     return new Promise<Blob>((resolve, reject) => {
       const croppedCanvas = this.#applyPerspectiveTransform(this.#corners);
       croppedCanvas.toBlob((blob) => {
@@ -644,7 +644,7 @@ class Scanner {
     });
   }
 
-  getFile() {
+  getFile(): Promise<File> {
     return new Promise<File>((resolve, reject) => {
       const croppedCanvas = this.#applyPerspectiveTransform(this.#corners);
       croppedCanvas.toBlob((blob) => {
@@ -656,11 +656,11 @@ class Scanner {
     });
   }
 
-  getCanvas() {
+  getCanvas(): HTMLCanvasElement {
     return this.#canvas;
   }
 
-  destroy() {
+  destroy(): void {
     this.#overlayCanvas.removeEventListener(
       "touchstart",
       this.#handleTouchStart

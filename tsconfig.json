@@ -3,7 +3,7 @@
     "target": "es2019",
     "module": "commonjs",
     "strict": true,
-    "declaration": false,
+    "declaration": true,
     "types": ["opencv-ts"],
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true

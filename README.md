@@ -11,19 +11,22 @@ Package **document_crop** is a JavaScript library which you can use to create Ca
 - **Framework-Agnostic**: Seamlessly integrate with your preferred web framework.
   <br>
 
+  ![demo](./assets/demo.gif)
+
 ## Basic Example Usage
 
-```javascript
-import Scanner from "document_crop";
+```typescript
+import Scanner, { ScannerOptions } from "document_crop";
 
-const scanner = new Scanner({
-  parent: document.getElementById("parent-div"), //must be a HTMLDivElement
+const scannerOptions: ScannerOptions = {
+  parent: document.getElementById("parent-div") as HTMLDivElement,
   width: 400,
-});
+};
 
+const scanner = new Scanner(scannerOptions);
 scanner.loadImg("path/to/image.jpg");
 
-const croppedImage = await scanner.crop({ format: "base64" });
+const croppedImage = scanner.crop();
 ```
 
 ## Vanilla JS Usage
@@ -55,60 +58,74 @@ _index.html_
 
 _index.js_
 
-```javascript
-import Scanner from "document_crop";
+```typescript
+import Scanner, { ScannerOptions, Position } from "./index";
 
-const parentDiv = document.getElementById("container");
-const imgInput = document.getElementById("image_input");
+const parentDiv: HTMLDivElement | null = document.getElementById(
+  "container"
+) as HTMLDivElement;
+const imgInput: HTMLInputElement = document.getElementById(
+  "image_input"
+) as HTMLInputElement;
 const uploadBtn = document.getElementById("upload_button");
 const cropBtn = document.getElementById("crop_button");
 
-let scanner = new Scanner({
-  parent: parentDiv,
-  width: 300,
-});
+if (parentDiv && imgInput && uploadBtn && cropBtn) {
+  const initialCorners: Position[] = [
+    { x: 15, y: 15 },
+    { x: 85, y: 15 },
+    { x: 85, y: 85 },
+    { x: 15, y: 85 },
+  ];
+  const scannerOptions: ScannerOptions = {
+    parent: parentDiv,
+    width: 300,
+    initialCorners,
+  };
 
-uploadBtn.addEventListener("click", () => {
-  if (imgInput.files && imgInput.files[0]) {
-    const file = imgInput.files[0];
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      console.log(e.target.result);
-      scanner.loadImg(e.target.result);
-    };
-    reader.readAsDataURL(file);
-  }
-});
+  let scanner = new Scanner(scannerOptions);
 
-cropBtn.addEventListener("click", () => {
-  scanner.crop({ format: "file" }).then((file) => {
+  uploadBtn.addEventListener("click", () => {
+    if (imgInput.files && imgInput.files[0]) {
+      const file = imgInput.files[0];
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        if (!e.target) return;
+        scanner.loadImg(e.target.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  cropBtn.addEventListener("click", async () => {
+    const src = scanner.crop();
     const img = document.createElement("img");
-    img.src = URL.createObjectURL(file);
+    img.src = src;
     img.width = 200;
     document.body.appendChild(img);
   });
-});
+}
 ```
 
 ## ReactJs Usage
 
-```
-import React, { useState, useRef } from 'react';
-import Scanner from 'document_crop';
+```typescript
+import React, { useState, useEffect, useRef } from "react";
+import Scanner, { ScannerOptions } from "./index";
 
-const Editor = (props) => {
+const Editor: React.FC = () => {
   const [imgSrc, setImgSrc] = useState("https://picsum.photos/300/600");
-  const [scanner, setScanner] = useState(null);
-  const divRef = useRef(null);
+  const [scanner, setScanner] = useState<Scanner | null>(null);
+  const divRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const scan = new Scanner({
-      parent: divRef.current,
+    const scannerOptions: ScannerOptions = {
+      parent: divRef.current as HTMLDivElement,
       width: 300,
       maxHeight: 550,
       cornerRadius: 14,
       cornerColor: "black",
-      cropBoxBorderColor: "white" ,
+      cropBoxBorderColor: "white",
       backdropColor: "rgba(40,40,40,0.5)",
       initialCorners: [
         { x: 15, y: 15 },
@@ -116,7 +133,8 @@ const Editor = (props) => {
         { x: 85, y: 85 },
         { x: 15, y: 85 },
       ],
-    });
+    };
+    const scan = new Scanner(scannerOptions);
     scan.loadImg(imgSrc);
     setScanner(scan);
     return () => {
@@ -125,26 +143,27 @@ const Editor = (props) => {
     };
   }, [imgSrc]);
 
-  const returnCroppedImage = () => {
+  const returnCroppedImage = async () => {
     if (scanner) {
-      const src = scanner.crop({ format: "base64" });
+      const src = scanner.crop();
       return src;
     }
+    return "";
   };
 
   return (
     <>
-      <img src={imgSrc} />
+      <img src={imgSrc} alt="Original Image" />
       <div ref={divRef}></div>
       <button onClick={() => setImgSrc("https://picsum.photos/400/600")}>
         Change Image
       </button>
-      <button onClick={() => console.log(returnCroppedImage())}>
+      <button onClick={async () => console.log(returnCroppedImage())}>
         Crop
       </button>
     </>
   );
-}
+};
 ```
 
 ## What This Library Is
@@ -168,33 +187,73 @@ However,
 
 See [Advanced Usage](#advanced-usage) section for more.
 
-## Constructor and Its Parameters
+## Constructor
 
-### Note: All measurements are in pixels.
+### `Scanner(options: ScannerOptions)`
 
-### `Scanner(options)`
+## Methods
 
-| Option               | Type                        | Required | Description                                            | Default                  |
+### `loadImg(imgSrc): void`
+
+Loads an image into the scanner.
+
+- `imgSrc` (string): The source URL of the image. Equivalent to 'src' attribute in HTMLImageElement.
+
+### `crop(): string`
+
+Crops the image within the defined crop box and returns the base64 encoded result.
+
+### `getBlob(): Promise<Blob>`
+
+Crops the image within the defined crop box and returns promise resolving to **Blob** result.
+
+### `getFile(): Promise<File>`
+
+Crops the image within the defined crop box and returns the base64 encoded result.
+
+### `getCanvas(): HTMLCanvasElement`
+
+Returns the source canvas.
+
+### `destroy(): void`
+
+Destroys the scanner instance and removes its elements from the DOM. Call this method before creating another instance to prevent memory leaks.
+
+## Types
+
+### ScannerOptions
+
+Type `ScannerOptions` represents configuration object for initializing [Scanner](##Constructor) instance.
+| Option | Type | Required | Description | Default |
 | -------------------- | --------------------------- | -------- | ------------------------------------------------------ | ------------------------ |
-| `parent`             | HTMLDivElement              | Yes      | The HTMLDivElement where the scanner will be appended. | -                        |
-| `width`              | number                      | No       | The width of the scanner canvas.                       | -                        |
-| `height`             | number                      | No       | The height of the scanner canvas.                      | -                        |
-| `maxWidth`           | number                      | No       | The maximum width of the scanner canvas.               | -                        |
-| `maxHeight`          | number                      | No       | The maximum height of the scanner canvas.              | -                        |
-| `cornerRadius`       | number                      | No       | The corner radius for the crop box.                    | `12`                     |
-| `cornerColor`        | string                      | No       | The color of the corner points.                        | `"lightgreen"`           |
-| `cropBoxColor`       | string                      | No       | The color of the crop box.                             | -                        |
-| `backdropColor`      | string                      | No       | The color of the backdrop outside the crop box.        | `"rgba(0, 0, 0, 0.5)"`   |
-| `minCropBoxWidth`    | number                      | No       | The minimum width of the crop box.                     | `100`                    |
-| `minCropBoxHeight`   | number                      | No       | The minimum height of the crop box.                    | `100`                    |
-| `cropBoxBorderWidth` | number                      | No       | The border width of the crop box.                      | `1`                      |
-| `cropBoxBorderColor` | string                      | No       | The border color of the crop box.                      | `"rgba(255, 255, 255)"`  |
-| `initialCorners`     | [{x: number, y: number}][4] | No       | Initial corners for the crop box. See details below.   | Covers the whole canvas. |
+| `parent` | HTMLDivElement | Yes | The HTMLDivElement where the scanner will be appended. | - |
+| `width` | number | No | The width of the scanner canvas. | - |
+| `height` | number | No | The height of the scanner canvas. | - |
+| `maxWidth` | number | No | The maximum width of the scanner canvas. | - |
+| `maxHeight` | number | No | The maximum height of the scanner canvas. | - |
+| `cornerRadius` | number | No | The corner radius for the crop box. | `12` |
+| `cornerColor` | string | No | The color of the corner points. | `"lightgreen"` |
+| `cropBoxColor` | string | No | The color of the crop box. | - |
+| `backdropColor` | string | No | The color of the backdrop outside the crop box. | `"rgba(0, 0, 0, 0.5)"` |
+| `minCropBoxWidth` | number | No | The minimum width of the crop box. | `100` |
+| `minCropBoxHeight` | number | No | The minimum height of the crop box. | `100` |
+| `cropBoxBorderWidth` | number | No | The border width of the crop box. | `1` |
+| `cropBoxBorderColor` | string | No | The border color of the crop box. | `"rgba(255, 255, 255)"` |
+| `initialCorners` | [Position]() [] | No | Initial corners for the crop box. See details below. | Covers the whole canvas. |
+
+### Position
+
+The `Position` type object represents the x and y coordinates of a point.
+
+| Property | Type     | Description                  |
+| -------- | -------- | ---------------------------- |
+| `x`      | `number` | The x-coordinate of a point. |
+| `y`      | `number` | The y-coordinate of a point. |
 
 ### Caveats:
 
 - **Setting dimensions**: If only one of 'width' or 'height' is set, the other dimension i.e, 'height' and 'width' respectively, will be set preserving the original image's aspect ratio. If none is set, the canvas will take the image's natural width and height.
-- **initialCorners**: Expects an array of four objects, each having x and y properties as percentage of the canvas size. These objects represent position of the cropbox corners in clockwise order, starting from the top-left corner.
+- **initialCorners**: Expects an array of four [Position](##Position) objects, with x and y properties as percentage of the canvas size. These objects represent position of the cropbox corners in clockwise order, starting from the top-left corner.
   <br>
 
 For example, the following 'initalCorners' will create a centered rectangular cropbox.
@@ -209,28 +268,6 @@ initialCorners: [
 ]
 ...
 ```
-
-## Methods
-
-### `loadImg(imgSrc)`
-
-Loads an image into the scanner.
-
-- `imgSrc` (string): The source URL of the image. Equivalent to 'src' attribute in HTMLImageElement.
-
-### `crop(options)`
-
-Crops the image within the defined crop box and returns the result.
-
-- `options` (object): Optional. An options object.
-  - `format` (string): Optional. The format of the result. Possible values:
-    - 'base64': returns **String** representing base64 encoded image **(default)**
-    - 'blob': returns **Promise** resolving into the Blob object.
-    - 'file': returns **Promise** resolving into the File object.
-
-### `destroy()`
-
-Destroys the scanner instance and removes its elements from the DOM. Call this method before creating another instance to prevent memory leaks.
 
 ## Advanced Usage
 

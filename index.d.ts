@@ -25,9 +25,10 @@ declare class Scanner {
     #private;
     constructor(options: ScannerOptions);
     loadImg(imgSrc: string): void;
-    crop({ format }: {
-        format?: string | undefined;
-    }): string | Promise<unknown>;
+    crop(): string;
+    getBlob(): Promise<Blob>;
+    getFile(): Promise<File>;
+    getCanvas(): HTMLCanvasElement;
     destroy(): void;
 }
 export default Scanner;
